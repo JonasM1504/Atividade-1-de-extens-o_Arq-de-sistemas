@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [11, 17, 21]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK and cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+
+      - name: Ensure JWT_SECRET is present
+        id: jwt
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          # Use the JWT_SECRET provided via repository secrets when available,
+          # otherwise generate a temporary random value for this CI run.
+          if [ -n "$JWT_SECRET" ]; then
+            echo "Using JWT_SECRET from repository secrets"
+            echo "JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          else
+            echo "JWT_SECRET secret not found — generating a temporary value for CI"
+            # generate 32 random bytes and encode base64
+            JWT_SECRET=$(head -c 32 /dev/urandom | base64)
+            echo "JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          fi
+
+      - name: Run Maven verify (tests + build)
+        run: mvn -B verify
+
+      - name: Upload build artifact (jar)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: |
+            target/*.jar
+            target/libs/*.jar
