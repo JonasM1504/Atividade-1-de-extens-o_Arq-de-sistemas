@@ -1,0 +1,21 @@
+# Pastas de Build e Target (Maven/Gradle)
+/target/
+/build/
+
+# Pastas de IDEs (IntelliJ, VS Code, Eclipse)
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+
+# Logs
+*.log
+log/
+logs/
+
+# Arquivos de Sistema
+.DS_Store # macOS
+
+# Arquivos Gerados de Backup
+*~
